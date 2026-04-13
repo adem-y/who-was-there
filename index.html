@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Who Was There — Football Trivia</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,sans-serif;background:#080c12;color:#e6edf3;min-height:100vh;display:flex;align-items:center;justify-content:center}
+  #app{width:100%;max-width:680px;min-height:100vh;background:#0d1117;display:flex;flex-direction:column}
+  .screen{display:none;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:2.5rem 1.5rem}
+  .screen.active{display:flex}
+
+  /* Setup */
+  .title{font-size:2.4rem;font-weight:800;letter-spacing:3px;color:#58a6ff;text-transform:uppercase;text-align:center;margin-bottom:.3rem}
+  .subtitle{font-size:.75rem;color:#8b949e;letter-spacing:4px;text-transform:uppercase;margin-bottom:2.5rem}
+  .form-group{width:100%;max-width:380px;margin-bottom:1.25rem}
+  .form-group label{display:block;font-size:.72rem;color:#8b949e;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:.4rem}
+  .form-group input,.form-group select{
+    width:100%;background:#161b22;border:1px solid #30363d;color:#e6edf3;
+    padding:.75rem 1rem;border-radius:8px;font-size:1rem;outline:none;font-family:inherit
+  }
+  .form-group input:focus,.form-group select:focus{border-color:#58a6ff}
+  .form-group select option{background:#161b22}
+  .btn-start{
+    width:100%;max-width:380px;margin-top:.75rem;padding:.85rem;border-radius:8px;
+    background:#58a6ff;color:#0d1117;font-size:1rem;font-weight:700;cursor:pointer;
+    border:none;letter-spacing:1.5px;text-transform:uppercase;transition:background .15s
+  }
+  .btn-start:hover{background:#79b8ff}
+  .btn-start:active{transform:scale(.98)}
+
+  /* Game header */
+  .game-header{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:1rem 1.5rem;background:#161b22;border-bottom:1px solid #21262d;
+    width:100%
+  }
+  .round-label{font-size:.68rem;color:#8b949e;text-transform:uppercase;letter-spacing:1px}
+  .round-num{font-size:1.1rem;font-weight:700;color:#e6edf3;margin-top:2px}
+  .scores{display:flex;gap:2rem}
+  .score-block{text-align:center}
+  .score-name{font-size:.68rem;color:#8b949e;letter-spacing:1px;text-transform:uppercase;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .score-val{font-size:1.8rem;font-weight:800;color:#58a6ff}
+
+  /* Extra banner */
+  .extra-banner{
+    display:none;width:100%;background:#21262d;color:#e3b341;
+    font-size:.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+    text-align:center;padding:.55rem
+  }
+
+  /* Logos */
+  .logos-area{
+    display:flex;justify-content:center;align-items:center;
+    gap:1.5rem;padding:2rem 1rem;flex-wrap:wrap;width:100%
+  }
+  .team-card{
+    display:flex;flex-direction:column;align-items:center;gap:.85rem;
+    background:#161b22;border:1px solid #21262d;border-radius:12px;
+    padding:1.5rem 1.25rem;flex:1;min-width:140px;max-width:200px
+  }
+  .team-name{font-size:.78rem;font-weight:600;color:#c9d1d9;text-transform:uppercase;letter-spacing:.8px;text-align:center}
+  .team-img{width:120px;height:120px;object-fit:contain}
+  .vs-badge{font-size:1.6rem;font-weight:800;color:#30363d;flex-shrink:0}
+
+  /* Buttons */
+  .answer-prompt{font-size:.78rem;color:#8b949e;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:1rem;text-align:center;padding:0 1rem}
+  .btn-row{display:flex;gap:.75rem;flex-wrap:wrap;justify-content:center;padding:0 1rem 2rem;width:100%}
+  .btn-p1,.btn-p2,.btn-pass{
+    flex:1;min-width:130px;max-width:190px;padding:.75rem .75rem;border-radius:8px;
+    font-size:.82rem;font-weight:700;cursor:pointer;border:none;
+    letter-spacing:.5px;text-transform:uppercase;transition:all .15s;font-family:inherit
+  }
+  .btn-p1{background:#1f6feb;color:#fff}
+  .btn-p1:hover{background:#388bfd}
+  .btn-p2{background:transparent;color:#58a6ff;border:1.5px solid #1f6feb}
+  .btn-p2:hover{background:#1f6feb22}
+  .btn-pass{background:#21262d;color:#8b949e;border:1px solid #30363d}
+  .btn-pass:hover{background:#30363d;color:#c9d1d9}
+  .btn-p1:active,.btn-p2:active,.btn-pass:active{transform:scale(.97)}
+
+  /* End screen */
+  #end-screen{text-align:center}
+  .trophy{font-size:4.5rem;margin-bottom:1rem}
+  .winner-label{font-size:.72rem;color:#8b949e;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:.4rem}
+  .winner-name{font-size:2.8rem;font-weight:800;color:#e3b341;margin-bottom:.4rem;letter-spacing:1px}
+  .winner-result{font-size:1rem;color:#8b949e;margin-bottom:2rem}
+  .scoreboard{display:flex;gap:1.5rem;justify-content:center;margin-bottom:2rem;flex-wrap:wrap}
+  .sb-block{background:#161b22;border:1px solid #21262d;border-radius:10px;padding:1rem 1.75rem;text-align:center;min-width:100px}
+  .sb-name{font-size:.68rem;color:#8b949e;letter-spacing:1px;text-transform:uppercase;margin-bottom:.25rem}
+  .sb-score{font-size:2.4rem;font-weight:800;color:#58a6ff}
+  .btn-again{
+    padding:.85rem 3rem;border-radius:8px;background:#58a6ff;color:#0d1117;
+    font-size:1rem;font-weight:700;cursor:pointer;border:none;
+    letter-spacing:1.5px;text-transform:uppercase;transition:background .15s;font-family:inherit
+  }
+  .btn-again:hover{background:#79b8ff}
+
+  @media(max-width:480px){
+    .title{font-size:1.8rem}
+    .team-img{width:90px;height:90px}
+    .logos-area{gap:1rem;padding:1.5rem .5rem}
+    .team-card{min-width:120px;padding:1rem .75rem}
+    .btn-p1,.btn-p2,.btn-pass{min-width:100px;font-size:.75rem}
+    .winner-name{font-size:2rem}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SETUP -->
+  <div id="setup-screen" class="screen active">
+    <div class="title">Who Was There</div>
+    <div class="subtitle">Football Trivia for Two</div>
+    <div class="form-group">
+      <label>Player 1 Name</label>
+      <input type="text" id="p1name" placeholder="e.g. Marco" maxlength="20"/>
+    </div>
+    <div class="form-group">
+      <label>Player 2 Name</label>
+      <input type="text" id="p2name" placeholder="e.g. Sofia" maxlength="20"/>
+    </div>
+    <div class="form-group">
+      <label>Number of Rounds</label>
+      <select id="numrounds">
+        <option value="3">3 Rounds</option>
+        <option value="5" selected>5 Rounds</option>
+        <option value="7">7 Rounds</option>
+        <option value="10">10 Rounds</option>
+      </select>
+    </div>
+    <button class="btn-start" onclick="startGame()">Start Game</button>
+  </div>
+
+  <!-- GAME -->
+  <div id="game-screen" class="screen" style="padding:0;justify-content:flex-start">
+    <div class="game-header">
+      <div>
+        <div class="round-label" id="round-label">Round</div>
+        <div class="round-num" id="round-display">1 / 10</div>
+      </div>
+      <div class="scores">
+        <div class="score-block">
+          <div class="score-name" id="s-p1name">P1</div>
+          <div class="score-val" id="s-p1score">0</div>
+        </div>
+        <div class="score-block">
+          <div class="score-name" id="s-p2name">P2</div>
+          <div class="score-val" id="s-p2score">0</div>
+        </div>
+      </div>
+    </div>
+    <div class="extra-banner" id="extra-banner">⚡ Extra Round — Sudden Death!</div>
+    <div class="logos-area">
+      <div class="team-card">
+        <div class="team-name" id="team1name"></div>
+        <img class="team-img" id="team1img" src="" alt="Team 1" onerror="this.style.opacity='.3'"/>
+      </div>
+      <div class="vs-badge">VS</div>
+      <div class="team-card">
+        <div class="team-name" id="team2name"></div>
+        <img class="team-img" id="team2img" src="" alt="Team 2" onerror="this.style.opacity='.3'"/>
+      </div>
+    </div>
+    <div class="answer-prompt">Who had a player at BOTH clubs?</div>
+    <div class="btn-row">
+      <button class="btn-p1" id="btn-p1" onclick="award(1)">Player 1</button>
+      <button class="btn-pass" onclick="award(0)">Pass / No Match</button>
+      <button class="btn-p2" id="btn-p2" onclick="award(2)">Player 2</button>
+    </div>
+  </div>
+
+  <!-- END -->
+  <div id="end-screen" class="screen">
+    <div class="trophy">🏆</div>
+    <div class="winner-label">Winner</div>
+    <div class="winner-name" id="winner-name"></div>
+    <div class="winner-result" id="winner-result"></div>
+    <div class="scoreboard">
+      <div class="sb-block">
+        <div class="sb-name" id="end-p1name">P1</div>
+        <div class="sb-score" id="end-p1score">0</div>
+      </div>
+      <div class="sb-block">
+        <div class="sb-name" id="end-p2name">P2</div>
+        <div class="sb-score" id="end-p2score">0</div>
+      </div>
+    </div>
+    <button class="btn-again" onclick="resetGame()">Play Again</button>
+  </div>
+
+</div>
+<script>
+/* ─── Team catalogue ───────────────────────────────────────────────────── */
+const ELITE = [
+  'arsenal','chelsea','liverpool','manchester-city','manchester-united',
+  'atletico-madrid','barcelona','real-madrid','sevilla',
+  'inter','juventus','lazio','milan','napoli','roma',
+  'bayern-munchen','borussia-dortmund','paris-saint-germain'
+];
+const OTHER = [
+  'aston-villa','newcastle','tottenham','west-ham',
+  'bayer-leverkusen','rb-leipzig',
+  'as-monaco','lille','lyon','marseille',
+  'benfica','fc-porto','sporting-cp',
+  'ajax','feyenoord','psv',
+  'corinthians','flamengo','santos',
+  'basaksehir','trabzonspor','al-nassr'
+];
+const BIG3  = ['besiktas','fenerbahce','galatasaray'];
+const ALL   = [...ELITE, ...OTHER, ...BIG3];
+
+const MAX_APPEARANCES = 2;   /* each team may appear at most this many times */
+const ELITE_WEIGHT    = 3;   /* elite teams count this many times in pool   */
+
+/* ─── Helpers ──────────────────────────────────────────────────────────── */
+function cleanName(s){ return s.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
+function imgSrc(s)   { return s+'.football-logos.cc.png'; }
+
+/*
+  Build a weighted draw pool that respects the per-team appearance cap.
+  `appearances` = { teamSlug: currentCount }
+  Returns a flat array where elite teams appear ELITE_WEIGHT times,
+  but only if they haven't hit MAX_APPEARANCES yet.
+*/
+function buildPool(appearances, excluded=[]) {
+  const pool = [];
+  ALL.forEach(t => {
+    if (excluded.includes(t)) return;
+    if ((appearances[t]||0) >= MAX_APPEARANCES) return;
+    const w = ELITE.includes(t) ? ELITE_WEIGHT : 1;
+    for (let i=0; i<w; i++) pool.push(t);
+  });
+  return pool;
+}
+
+/*
+  Pick one team from a pool at random.
+*/
+function pickFrom(pool) {
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+/*
+  Draw a valid pair {t1, t2, key} given current appearance counts and
+  already-used pair keys.  Optionally force one slot to a BIG3 team.
+
+  The frequency cap is the hard constraint — pair-uniqueness is relaxed
+  if needed (extra rounds can repeat pairs once all teams are capped).
+*/
+function drawPair(appearances, usedKeys, forceBig3=false) {
+  let t1, t2, key, tries=0;
+  const maxTries = 300;
+
+  do {
+    tries++;
+    if (forceBig3) {
+      /* Pick a BIG3 team that hasn't hit its cap */
+      const b3pool = BIG3.filter(t => (appearances[t]||0) < MAX_APPEARANCES);
+      if (b3pool.length === 0) {
+        /* All BIG3 are capped — fall back to normal draw */
+        forceBig3 = false;
+        continue;
+      }
+      t1 = b3pool[Math.floor(Math.random() * b3pool.length)];
+      const p2 = buildPool(appearances, [t1]);
+      if (p2.length === 0) continue;
+      t2 = pickFrom(p2);
+    } else {
+      const p1 = buildPool(appearances);
+      if (p1.length === 0) break;          /* nothing left — give up */
+      t1 = pickFrom(p1);
+      const p2 = buildPool(appearances, [t1]);
+      if (p2.length === 0) continue;
+      t2 = pickFrom(p2);
+    }
+    key = [t1,t2].sort().join('|');
+
+    /* Accept immediately if pair is fresh, or after many tries if all pairs seen */
+    if (!usedKeys.includes(key) || tries >= maxTries) break;
+  } while (tries < maxTries);
+
+  return { t1, t2, key };
+}
+
+/*
+  Record both teams in an appearance map (mutates the map).
+*/
+function recordAppearances(appearances, t1, t2) {
+  appearances[t1] = (appearances[t1]||0) + 1;
+  appearances[t2] = (appearances[t2]||0) + 1;
+}
+
+/*
+  Pre-build the full schedule for the regular rounds.
+  Guarantees:
+    • Exactly one BIG3 appearance (at a random round index)
+    • Per-team cap of MAX_APPEARANCES respected throughout
+    • Weighted randomisation (elite teams preferred)
+    • No repeated pairs (best-effort)
+*/
+function buildSchedule(rounds) {
+  const appearances = {};
+  const usedKeys    = [];
+  const schedule    = new Array(rounds);
+
+  /* 1. Place the mandatory BIG3 round at a random position */
+  const b3idx = Math.floor(Math.random() * rounds);
+  const b3    = drawPair(appearances, usedKeys, true);
+  usedKeys.push(b3.key);
+  recordAppearances(appearances, b3.t1, b3.t2);
+  schedule[b3idx] = b3;
+
+  /* 2. Fill every other slot */
+  for (let i=0; i<rounds; i++) {
+    if (i === b3idx) continue;
+    const p = drawPair(appearances, usedKeys, false);
+    usedKeys.push(p.key);
+    recordAppearances(appearances, p.t1, p.t2);
+    schedule[i] = p;
+  }
+
+  return { schedule, appearances, usedKeys };
+}
+
+/* ─── State ────────────────────────────────────────────────────────────── */
+let state = {};
+
+/* ─── Game flow ────────────────────────────────────────────────────────── */
+function startGame() {
+  const p1     = document.getElementById('p1name').value.trim() || 'Player 1';
+  const p2     = document.getElementById('p2name').value.trim() || 'Player 2';
+  const rounds = parseInt(document.getElementById('numrounds').value);
+
+  const { schedule, appearances, usedKeys } = buildSchedule(rounds);
+
+  state = { p1, p2, rounds, round:1,
+            score1:0, score2:0, extra:false,
+            schedule, appearances, usedKeys };
+
+  document.getElementById('s-p1name').textContent = p1;
+  document.getElementById('s-p2name').textContent = p2;
+  document.getElementById('btn-p1').textContent   = p1;
+  document.getElementById('btn-p2').textContent   = p2;
+  showScreen('game-screen');
+  loadRound();
+}
+
+function loadRound() {
+  const { round, rounds, extra, schedule, appearances, usedKeys } = state;
+
+  document.getElementById('round-label').textContent   = extra ? 'Extra Round' : 'Round';
+  document.getElementById('round-display').textContent = extra ? 'Sudden Death' : `${round} / ${rounds}`;
+  document.getElementById('s-p1score').textContent     = state.score1;
+  document.getElementById('s-p2score').textContent     = state.score2;
+  document.getElementById('extra-banner').style.display = extra ? 'block' : 'none';
+
+  let t1, t2;
+  if (!extra) {
+    ({ t1, t2 } = schedule[round - 1]);
+  } else {
+    /* Extra / sudden-death rounds: draw fresh, respecting frequency cap */
+    const p = drawPair(appearances, usedKeys, false);
+    usedKeys.push(p.key);
+    recordAppearances(appearances, p.t1, p.t2);
+    t1 = p.t1; t2 = p.t2;
+  }
+
+  document.getElementById('team1name').textContent = cleanName(t1);
+  document.getElementById('team2name').textContent = cleanName(t2);
+  const img1 = document.getElementById('team1img');
+  const img2 = document.getElementById('team2img');
+  img1.style.opacity = '1'; img2.style.opacity = '1';
+  img1.src = imgSrc(t1);
+  img2.src = imgSrc(t2);
+}
+
+function award(player) {
+  if (player === 1) state.score1++;
+  if (player === 2) state.score2++;
+  nextRound();
+}
+
+function nextRound() {
+  if (state.extra) {
+    if (state.score1 !== state.score2) { endGame(); return; }
+    loadRound(); return;
+  }
+  if (state.round >= state.rounds) {
+    if (state.score1 === state.score2) { state.extra = true; loadRound(); }
+    else { endGame(); }
+    return;
+  }
+  state.round++;
+  loadRound();
+}
+
+function endGame() {
+  const p1wins = state.score1 > state.score2;
+  document.getElementById('winner-name').textContent   = p1wins ? state.p1 : state.p2;
+  document.getElementById('winner-result').textContent = (p1wins ? state.score1 : state.score2) + ' – ' + (p1wins ? state.score2 : state.score1);
+  document.getElementById('end-p1name').textContent  = state.p1;
+  document.getElementById('end-p2name').textContent  = state.p2;
+  document.getElementById('end-p1score').textContent = state.score1;
+  document.getElementById('end-p2score').textContent = state.score2;
+  showScreen('end-screen');
+}
+
+function resetGame() { showScreen('setup-screen'); }
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+</script>
+</body>
+</html>
