@@ -43,6 +43,26 @@
   .btn-start:hover{background:#79b8ff}
   .btn-start:active{transform:scale(.98)}
 
+  /* ── Countdown Screen ── */
+  #countdown-screen{background:#0d1117}
+  .countdown-number{
+    font-size:12rem;font-weight:900;color:#58a6ff;
+    line-height:1;letter-spacing:-4px;
+    text-shadow:0 0 60px rgba(88,166,255,.4);
+    animation:cdPop .35s cubic-bezier(.22,1,.36,1);
+    transition:color .2s
+  }
+  .countdown-number.go{
+    color:#3fb950;
+    text-shadow:0 0 60px rgba(63,185,80,.4);
+    font-size:9rem;letter-spacing:2px
+  }
+  @keyframes cdPop{
+    0%  {transform:scale(.5);opacity:0}
+    60% {transform:scale(1.08)}
+    100%{transform:scale(1);opacity:1}
+  }
+
   /* ── Game header ── */
   .game-header{
     display:flex;justify-content:space-between;align-items:center;
@@ -118,6 +138,8 @@
     .winner-name{font-size:2rem}
     .timer-ring-container,.timer-svg{width:58px;height:58px}
     .timer-num{font-size:1.2rem}
+    .countdown-number{font-size:8rem}
+    .countdown-number.go{font-size:6rem}
   }
 </style>
 </head>
@@ -139,12 +161,17 @@
     <div class="pts-group">
       <label>First to score</label>
       <div class="pts-pills">
-        <button class="pts-pill" data-pts="3" onclick="selectPts(3)">3 pts</button>
-        <button class="pts-pill active" data-pts="5" onclick="selectPts(5)">5 pts</button>
-        <button class="pts-pill" data-pts="7" onclick="selectPts(7)">7 pts</button>
+        <!-- Default: 3 pts active. Only 3 and 5 are available. -->
+        <button class="pts-pill active" data-pts="3" onclick="selectPts(3)">3 pts</button>
+        <button class="pts-pill"        data-pts="5" onclick="selectPts(5)">5 pts</button>
       </div>
     </div>
     <button class="btn-start" onclick="startGame()">Start Game</button>
+  </div>
+
+  <!-- COUNTDOWN -->
+  <div id="countdown-screen" class="screen">
+    <div class="countdown-number" id="countdown-number">3</div>
   </div>
 
   <!-- GAME -->
@@ -152,7 +179,7 @@
     <div class="game-header">
       <div>
         <div class="target-info">First to</div>
-        <div class="target-val" id="hdr-target">5 points</div>
+        <div class="target-val" id="hdr-target">3 points</div>
       </div>
       <div class="scores">
         <div class="score-block">
@@ -285,7 +312,8 @@ function drawPair(usedTeams, forceBig3=false) {
   if (forceBig3) {
     const avail = BIG3.filter(t => !usedTeams.has(t));
     if (avail.length === 0) {
-      forceBig3 = false; /* all BIG3 used — fall through */
+      /* All BIG3 exhausted — fall back to standard pool */
+      forceBig3 = false;
     } else {
       t1 = avail[Math.floor(Math.random() * avail.length)];
       const p2 = buildPool(usedTeams, [t1]);
@@ -310,7 +338,7 @@ function drawPair(usedTeams, forceBig3=false) {
 ═══════════════════════════════════════════════════════ */
 let state = {};
 let timerInterval = null;
-let selectedPts   = 5;
+let selectedPts   = 3; /* Default: 3 pts */
 
 function selectPts(n) {
   selectedPts = n;
@@ -377,6 +405,39 @@ function renderPips(id, score, target) {
 }
 
 /* ═══════════════════════════════════════════════════════
+   PRE-GAME COUNTDOWN
+═══════════════════════════════════════════════════════ */
+function runCountdown(callback) {
+  showScreen('countdown-screen');
+  const el = document.getElementById('countdown-number');
+  const steps = ['2','1','GO!'];
+  let i = 0;
+
+  function showStep() {
+    if (i >= steps.length) {
+      setTimeout(callback, 200);
+      return;
+    }
+
+    const val = steps[i];
+    const isGo = val === 'GO!';
+    
+    el.textContent = val;
+    el.className = 'countdown-number' + (isGo ? ' go' : '');
+
+    // Force reflow to restart CSS animation
+    el.style.animation = 'none';
+    void el.offsetHeight; 
+    el.style.animation = '';
+
+    i++;
+    setTimeout(showStep, isGo ? 800 : 900);
+  }
+
+  showStep();
+}
+
+/* ═══════════════════════════════════════════════════════
    GAME FLOW
 ═══════════════════════════════════════════════════════ */
 function startGame() {
@@ -388,7 +449,8 @@ function startGame() {
     p1, p2, target,
     score1: 0, score2: 0,
     usedTeams: new Set(),  /* every team here won't appear again this session */
-    big3Done: false        /* has the BIG3 guarantee been satisfied? */
+    questionCount: 0,      /* tracks total questions asked — used for BIG3 cadence */
+    big3UsedCount: 0       /* tracks how many BIG3 teams have appeared */
   };
 
   document.getElementById('hdr-target').textContent = target + ' points';
@@ -397,13 +459,27 @@ function startGame() {
   document.getElementById('btn-p1').textContent     = p1;
   document.getElementById('btn-p2').textContent     = p2;
 
-  showScreen('game-screen');
-  loadQuestion();
+  /* Hide setup, run countdown, then start */
+  showScreen('setup-screen'); /* keeps setup hidden while countdown runs */
+  runCountdown(() => {
+    showScreen('game-screen');
+    loadQuestion();
+  });
 }
 
 function loadQuestion() {
-  /* Force BIG3 until the guarantee is met */
-  const pair = drawPair(state.usedTeams, !state.big3Done);
+  state.questionCount++;
+
+  /*
+    BIG3 Logic — every 3rd question must feature a BIG3 team.
+    questionCount % 3 === 0 → force BIG3 if any remain unused.
+    All other questions → standard weighted pool.
+  */
+  const isBig3Question = (state.questionCount % 3 === 0);
+  const big3Available  = BIG3.some(t => !state.usedTeams.has(t));
+  const forceBig3      = isBig3Question && big3Available;
+
+  const pair = drawPair(state.usedTeams, forceBig3);
   if (!pair) { endGame(); return; } /* pool exhausted — end gracefully */
 
   const {t1, t2} = pair;
@@ -412,12 +488,7 @@ function loadQuestion() {
   state.usedTeams.add(t1);
   state.usedTeams.add(t2);
 
-  /* Mark BIG3 guarantee satisfied if applicable */
-  if (!state.big3Done && (BIG3.includes(t1) || BIG3.includes(t2))) {
-    state.big3Done = true;
-  }
-
-  /* Header */
+  /* Header scores */
   document.getElementById('s-p1score').textContent = state.score1;
   document.getElementById('s-p2score').textContent = state.score2;
   renderPips('p1', state.score1, state.target);
