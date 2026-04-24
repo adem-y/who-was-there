@@ -35,6 +35,24 @@
   .pts-pill.active{background:#1f6feb;border-color:#1f6feb;color:#fff}
   .pts-pill:hover:not(.active){border-color:#58a6ff;color:#58a6ff}
 
+  /* ── Game Format Selector ── */
+  .fmt-group{width:100%;max-width:380px;margin-bottom:1.25rem}
+  .fmt-group label{display:block;font-size:.72rem;color:#8b949e;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:.6rem}
+  .fmt-pills{display:flex;gap:.6rem;flex-direction:column}
+  .fmt-pill{
+    width:100%;padding:.7rem 1rem;border-radius:8px;border:1px solid #30363d;
+    background:#161b22;color:#8b949e;font-size:.82rem;font-weight:700;
+    cursor:pointer;text-align:left;transition:all .15s;font-family:inherit;letter-spacing:.5px;
+    display:flex;align-items:center;gap:.75rem
+  }
+  .fmt-pill .fmt-icon{font-size:1.1rem;flex-shrink:0}
+  .fmt-pill .fmt-text{display:flex;flex-direction:column;gap:.15rem}
+  .fmt-pill .fmt-name{font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px}
+  .fmt-pill .fmt-desc{font-size:.68rem;color:#8b949e;font-weight:400;text-transform:none;letter-spacing:.3px}
+  .fmt-pill.active{background:#1a2940;border-color:#1f6feb;color:#58a6ff}
+  .fmt-pill.active .fmt-desc{color:#79b8ff}
+  .fmt-pill:hover:not(.active){border-color:#58a6ff;color:#c9d1d9}
+
   .btn-start{
     width:100%;max-width:380px;margin-top:.75rem;padding:.85rem;border-radius:8px;
     background:#58a6ff;color:#0d1117;font-size:1rem;font-weight:700;cursor:pointer;
@@ -79,6 +97,19 @@
   .pip{width:7px;height:7px;border-radius:50%;background:#1f6feb}
   .pip.empty{background:#21262d}
 
+  /* ── Round type badge ── */
+  .round-type-bar{
+    width:100%;padding:.45rem 1.5rem;background:#0d1117;border-bottom:1px solid #21262d;
+    display:flex;align-items:center;gap:.5rem
+  }
+  .round-badge{
+    font-size:.62rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+    padding:.2rem .6rem;border-radius:4px
+  }
+  .round-badge.mode-tt{background:#1f6feb22;color:#58a6ff;border:1px solid #1f6feb55}
+  .round-badge.mode-tc{background:#2d1f6f22;color:#b08fff;border:1px solid #7c3aed55}
+  .round-badge-label{font-size:.62rem;color:#8b949e;letter-spacing:1px}
+
   /* ── Timer ring ── */
   .timer-wrap{display:flex;flex-direction:column;justify-content:center;align-items:center;padding:1rem 1rem .3rem;width:100%;gap:.4rem}
   .timer-ring-container{position:relative;width:68px;height:68px}
@@ -96,11 +127,15 @@
   .timer-num.danger{color:#f85149}
   .timeout-msg{display:none;font-size:.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#f85149;text-align:center}
 
-  /* ── Logos ── */
+  /* ── Logos area ── */
   .logos-area{display:flex;justify-content:center;align-items:center;gap:1.5rem;padding:1rem 1rem .75rem;flex-wrap:wrap;width:100%}
   .team-card{display:flex;flex-direction:column;align-items:center;gap:.85rem;background:#161b22;border:1px solid #21262d;border-radius:12px;padding:1.5rem 1.25rem;flex:1;min-width:140px;max-width:200px}
+  .team-card.country-card{border-color:#7c3aed44;background:#1a1528}
   .team-name{font-size:.78rem;font-weight:600;color:#c9d1d9;text-transform:uppercase;letter-spacing:.8px;text-align:center}
+  .team-name.country-label{color:#b08fff}
   .team-img{width:120px;height:120px;object-fit:contain}
+  /* Country flags are wider, override size */
+  .team-img.flag-img{width:140px;height:94px;object-fit:cover;border-radius:6px;box-shadow:0 2px 12px #0006}
   .vs-badge{font-size:1.6rem;font-weight:800;color:#30363d;flex-shrink:0}
 
   /* ── Answer buttons ── */
@@ -132,6 +167,7 @@
   @media(max-width:480px){
     .title{font-size:1.8rem}
     .team-img{width:90px;height:90px}
+    .team-img.flag-img{width:110px;height:74px}
     .logos-area{gap:1rem;padding:.75rem .5rem .5rem}
     .team-card{min-width:120px;padding:1rem .75rem}
     .btn-p1,.btn-p2,.btn-pass{min-width:100px;font-size:.75rem}
@@ -140,6 +176,8 @@
     .timer-num{font-size:1.2rem}
     .countdown-number{font-size:8rem}
     .countdown-number.go{font-size:6rem}
+    .fmt-pill .fmt-name{font-size:.75rem}
+    .fmt-pill .fmt-desc{font-size:.65rem}
   }
 </style>
 </head>
@@ -161,11 +199,39 @@
     <div class="pts-group">
       <label>First to score</label>
       <div class="pts-pills">
-        <!-- Default: 3 pts active. Only 3 and 5 are available. -->
         <button class="pts-pill active" data-pts="3" onclick="selectPts(3)">3 pts</button>
         <button class="pts-pill"        data-pts="5" onclick="selectPts(5)">5 pts</button>
       </div>
     </div>
+
+    <!-- NEW: Game Format selector -->
+    <div class="fmt-group">
+      <label>Game Format</label>
+      <div class="fmt-pills">
+        <button class="fmt-pill active" data-fmt="tt" onclick="selectFormat('tt')">
+          <span class="fmt-icon">⚽</span>
+          <span class="fmt-text">
+            <span class="fmt-name">Team vs Team</span>
+            <span class="fmt-desc">Two club logos — who played for both?</span>
+          </span>
+        </button>
+        <button class="fmt-pill" data-fmt="tc" onclick="selectFormat('tc')">
+          <span class="fmt-icon">🌍</span>
+          <span class="fmt-text">
+            <span class="fmt-name">Team vs Country</span>
+            <span class="fmt-desc">One club logo + one country flag — who played for both?</span>
+          </span>
+        </button>
+        <button class="fmt-pill" data-fmt="mix" onclick="selectFormat('mix')">
+          <span class="fmt-icon">🔀</span>
+          <span class="fmt-text">
+            <span class="fmt-name">Mixed</span>
+            <span class="fmt-desc">Alternates between Team–Team and Team–Country rounds</span>
+          </span>
+        </button>
+      </div>
+    </div>
+
     <button class="btn-start" onclick="startGame()">Start Game</button>
   </div>
 
@@ -184,15 +250,21 @@
       <div class="scores">
         <div class="score-block">
           <div class="score-name" id="s-p1name">P1</div>
-          <div class="score-val" id="s-p1score">0</div>
+          <div class="score-val"  id="s-p1score">0</div>
           <div class="score-pips" id="pips-p1"></div>
         </div>
         <div class="score-block">
           <div class="score-name" id="s-p2name">P2</div>
-          <div class="score-val" id="s-p2score">0</div>
+          <div class="score-val"  id="s-p2score">0</div>
           <div class="score-pips" id="pips-p2"></div>
         </div>
       </div>
+    </div>
+
+    <!-- Round type indicator (visible in mixed mode, always shown for clarity) -->
+    <div class="round-type-bar" id="round-type-bar">
+      <span class="round-badge mode-tt" id="round-badge">Team vs Team</span>
+      <span class="round-badge-label" id="round-badge-label"></span>
     </div>
 
     <div class="timer-wrap">
@@ -206,19 +278,11 @@
       <div class="timeout-msg" id="timeout-msg">⏱ Time's up — press pass</div>
     </div>
 
-    <div class="logos-area">
-      <div class="team-card">
-        <div class="team-name" id="team1name"></div>
-        <img class="team-img" id="team1img" src="" alt="Team 1" onerror="this.style.opacity='.3'"/>
-      </div>
-      <div class="vs-badge">VS</div>
-      <div class="team-card">
-        <div class="team-name" id="team2name"></div>
-        <img class="team-img" id="team2img" src="" alt="Team 2" onerror="this.style.opacity='.3'"/>
-      </div>
+    <div class="logos-area" id="logos-area">
+      <!-- Populated dynamically -->
     </div>
 
-    <div class="answer-prompt">Who had a player at BOTH clubs?</div>
+    <div class="answer-prompt" id="answer-prompt">Who had a player at BOTH clubs?</div>
     <div class="btn-row">
       <button class="btn-p1" id="btn-p1" onclick="award(1)">Player 1</button>
       <button class="btn-pass" id="btn-pass" onclick="award(0)">Pass / No Match</button>
@@ -248,7 +312,7 @@
 </div>
 <script>
 /* ═══════════════════════════════════════════════════════
-   TEAM CATALOGUE
+   TEAM CATALOGUE  (unchanged from original)
 ═══════════════════════════════════════════════════════ */
 const ELITE = [
   'arsenal','chelsea','liverpool','manchester-city','manchester-united',
@@ -273,21 +337,32 @@ const OTHER = [
 const BIG3 = ['besiktas','fenerbahce','galatasaray'];
 const ALL  = [...ELITE, ...OTHER, ...BIG3];
 
+/* ── Country catalogue ── */
+/* Slugs must match filename pattern: <slug>.country-flags.png  */
+const COUNTRIES = [
+  'Albania', 'Argentina', 'Austria', 'Belgium', 'Bosnia_and_Herzegovina', 
+  'Brazil', 'Cameroon', 'Canada', 'Chile', 'Colombia', 
+  'Croatia', 'Czech_Republic', 'Denmark', 'Egypt', 
+  'England', 'Finland', 'France', 'Germany', 'Greece', 
+  'Hungary', 'Italy', 'Ivory_Coast', 'Japan', 'Mexico', 
+  'Morocco', 'Netherlands', 'Nigeria', 'Norway', 'Poland', 
+  'Portugal', 'Romania', 'Russia', 'Senegal', 
+  'Serbia', 'South_Korea', 'Spain', 'Sweden', 'Switzerland', 
+  'Turkey', 'Ukraine', 'Uruguay', 'USA', 'Wales'
+];
+
 const ELITE_WEIGHT  = 3;
 const TIMER_SEC     = 10;
 const CIRCUMFERENCE = 2 * Math.PI * 30; /* r=30 in SVG */
 
 /* ═══════════════════════════════════════════════════════
-   HELPERS
+   HELPERS  (cleanName & imgSrc unchanged)
 ═══════════════════════════════════════════════════════ */
 function cleanName(s){ return s.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
 function imgSrc(s)   { return s + '.football-logos.cc.png'; }
+function flagSrc(s)  { return s + '.png'; }
 
-/*
-  Build a weighted pool of teams not yet used this session.
-  usedTeams: Set of slugs already shown.
-  excluded:  array of slugs to also skip (the other pick in this pair).
-*/
+/*  Build a weighted pool of teams not yet used this session.  */
 function buildPool(usedTeams, excluded=[]) {
   const pool = [];
   ALL.forEach(t => {
@@ -301,18 +376,13 @@ function buildPool(usedTeams, excluded=[]) {
 
 function pickFrom(pool){ return pool[Math.floor(Math.random()*pool.length)]; }
 
-/*
-  Draw one fresh pair from the unused pool.
-  forceBig3 = true: anchor one slot to an unused BIG3 team.
-  Returns {t1, t2} or null if the pool is exhausted.
-*/
+/*  Draw one fresh pair (team–team).  Unchanged original logic.  */
 function drawPair(usedTeams, forceBig3=false) {
   let t1, t2;
 
   if (forceBig3) {
     const avail = BIG3.filter(t => !usedTeams.has(t));
     if (avail.length === 0) {
-      /* All BIG3 exhausted — fall back to standard pool */
       forceBig3 = false;
     } else {
       t1 = avail[Math.floor(Math.random() * avail.length)];
@@ -333,12 +403,43 @@ function drawPair(usedTeams, forceBig3=false) {
   return {t1,t2};
 }
 
+/*  Draw one team + one unused country for a team–country round.  */
+function drawTeamCountry(usedTeams, usedCountries, forceBig3=false) {
+  /* Pick team using same BIG3 logic */
+  let team;
+  if (forceBig3) {
+    const avail = BIG3.filter(t => !usedTeams.has(t));
+    if (avail.length > 0) {
+      team = avail[Math.floor(Math.random() * avail.length)];
+    }
+  }
+  if (!team) {
+    const pool = buildPool(usedTeams);
+    if (pool.length === 0) return null;
+    team = pickFrom(pool);
+  }
+
+  /* Pick unused country */
+  const cPool = COUNTRIES.filter(c => !usedCountries.has(c));
+  if (cPool.length === 0) {
+    /* All countries used — reset country pool */
+    usedCountries.clear();
+    cPool.push(...COUNTRIES);
+  }
+  const country = cPool[Math.floor(Math.random() * cPool.length)];
+
+  /* Randomise left/right */
+  if (Math.random() < .5) return { team, country, teamLeft: true };
+  return { team, country, teamLeft: false };
+}
+
 /* ═══════════════════════════════════════════════════════
    STATE & SETUP UI
 ═══════════════════════════════════════════════════════ */
-let state = {};
-let timerInterval = null;
-let selectedPts   = 3; /* Default: 3 pts */
+let state          = {};
+let timerInterval  = null;
+let selectedPts    = 3;
+let selectedFormat = 'tt';  /* 'tt' | 'tc' | 'mix' */
 
 function selectPts(n) {
   selectedPts = n;
@@ -347,8 +448,15 @@ function selectPts(n) {
   );
 }
 
+function selectFormat(f) {
+  selectedFormat = f;
+  document.querySelectorAll('.fmt-pill').forEach(b =>
+    b.classList.toggle('active', b.dataset.fmt === f)
+  );
+}
+
 /* ═══════════════════════════════════════════════════════
-   TIMER
+   TIMER  (unchanged)
 ═══════════════════════════════════════════════════════ */
 function startTimer() {
   clearInterval(timerInterval);
@@ -376,7 +484,6 @@ function setTimerDisplay(rem) {
 }
 
 function onTimeout() {
-  /* Lock scoring buttons; keep Pass so the game can move on */
   document.getElementById('btn-p1').disabled = true;
   document.getElementById('btn-p2').disabled = true;
   document.getElementById('timeout-msg').style.display = 'block';
@@ -392,7 +499,7 @@ function resetQuestionUI() {
 }
 
 /* ═══════════════════════════════════════════════════════
-   SCORE PIPS
+   SCORE PIPS  (unchanged)
 ═══════════════════════════════════════════════════════ */
 function renderPips(id, score, target) {
   const el = document.getElementById('pips-' + id);
@@ -405,7 +512,7 @@ function renderPips(id, score, target) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   PRE-GAME COUNTDOWN
+   PRE-GAME COUNTDOWN  (unchanged)
 ═══════════════════════════════════════════════════════ */
 function runCountdown(callback) {
   showScreen('countdown-screen');
@@ -414,27 +521,70 @@ function runCountdown(callback) {
   let i = 0;
 
   function showStep() {
-    if (i >= steps.length) {
-      setTimeout(callback, 200);
-      return;
-    }
-
-    const val = steps[i];
+    if (i >= steps.length) { setTimeout(callback, 200); return; }
+    const val  = steps[i];
     const isGo = val === 'GO!';
-    
     el.textContent = val;
     el.className = 'countdown-number' + (isGo ? ' go' : '');
-
-    // Force reflow to restart CSS animation
     el.style.animation = 'none';
-    void el.offsetHeight; 
+    void el.offsetHeight;
     el.style.animation = '';
-
     i++;
     setTimeout(showStep, isGo ? 800 : 900);
   }
 
   showStep();
+}
+
+/* ═══════════════════════════════════════════════════════
+   RENDER LOGOS AREA
+═══════════════════════════════════════════════════════ */
+function renderTeamTeam(t1, t2) {
+  const area = document.getElementById('logos-area');
+  area.innerHTML = `
+    <div class="team-card">
+      <div class="team-name" id="team1name">${cleanName(t1)}</div>
+      <img class="team-img" id="team1img" src="${imgSrc(t1)}" alt="${cleanName(t1)}" onerror="this.style.opacity='.3'"/>
+    </div>
+    <div class="vs-badge">VS</div>
+    <div class="team-card">
+      <div class="team-name" id="team2name">${cleanName(t2)}</div>
+      <img class="team-img" id="team2img" src="${imgSrc(t2)}" alt="${cleanName(t2)}" onerror="this.style.opacity='.3'"/>
+    </div>`;
+  document.getElementById('answer-prompt').textContent = 'A player at BOTH clubs?';
+}
+
+function renderTeamCountry(team, country, teamLeft) {
+  const area = document.getElementById('logos-area');
+  const teamCard = `
+    <div class="team-card">
+      <div class="team-name">${cleanName(team)}</div>
+      <img class="team-img" src="${imgSrc(team)}" alt="${cleanName(team)}" onerror="this.style.opacity='.3'"/>
+    </div>`;
+  const countryCard = `
+    <div class="team-card country-card">
+      <div class="team-name country-label">${cleanName(country)}</div>
+      <img class="team-img flag-img" src="${flagSrc(country)}" alt="${cleanName(country)}" onerror="this.style.opacity='.3'"/>
+    </div>`;
+  area.innerHTML = (teamLeft ? teamCard : countryCard) +
+    `<div class="vs-badge">VS</div>` +
+    (teamLeft ? countryCard : teamCard);
+  document.getElementById('answer-prompt').textContent = 'Who played for this club AND represented this country?';
+}
+
+/* Update the round-type badge */
+function setRoundBadge(isTc) {
+  const badge = document.getElementById('round-badge');
+  const label = document.getElementById('round-badge-label');
+  if (isTc) {
+    badge.textContent = 'Team vs Country';
+    badge.className   = 'round-badge mode-tc';
+  } else {
+    badge.textContent = 'Team vs Team';
+    badge.className   = 'round-badge mode-tt';
+  }
+  /* Show extra hint only in mixed mode */
+  label.textContent = selectedFormat === 'mix' ? (isTc ? '🌍 Country round' : '⚽ Club round') : '';
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -448,9 +598,11 @@ function startGame() {
   state = {
     p1, p2, target,
     score1: 0, score2: 0,
-    usedTeams: new Set(),  /* every team here won't appear again this session */
-    questionCount: 0,      /* tracks total questions asked — used for BIG3 cadence */
-    big3UsedCount: 0       /* tracks how many BIG3 teams have appeared */
+    usedTeams:     new Set(),
+    usedCountries: new Set(),
+    questionCount: 0,
+    big3UsedCount: 0,
+    gameFormat: selectedFormat   /* snapshot of chosen format */
   };
 
   document.getElementById('hdr-target').textContent = target + ' points';
@@ -459,8 +611,7 @@ function startGame() {
   document.getElementById('btn-p1').textContent     = p1;
   document.getElementById('btn-p2').textContent     = p2;
 
-  /* Hide setup, run countdown, then start */
-  showScreen('setup-screen'); /* keeps setup hidden while countdown runs */
+  showScreen('setup-screen');
   runCountdown(() => {
     showScreen('game-screen');
     loadQuestion();
@@ -470,40 +621,43 @@ function startGame() {
 function loadQuestion() {
   state.questionCount++;
 
-  /*
-    BIG3 Logic — every 3rd question must feature a BIG3 team.
-    questionCount % 3 === 0 → force BIG3 if any remain unused.
-    All other questions → standard weighted pool.
-  */
+  /* BIG3 cadence: every 3rd question forces a BIG3 team (unchanged) */
   const isBig3Question = (state.questionCount % 3 === 0);
   const big3Available  = BIG3.some(t => !state.usedTeams.has(t));
   const forceBig3      = isBig3Question && big3Available;
 
-  const pair = drawPair(state.usedTeams, forceBig3);
-  if (!pair) { endGame(); return; } /* pool exhausted — end gracefully */
+  /* Decide round type based on selected game format */
+  let isTeamCountryRound;
+  if (state.gameFormat === 'tt')  isTeamCountryRound = false;
+  else if (state.gameFormat === 'tc') isTeamCountryRound = true;
+  else /* mix */ isTeamCountryRound = (state.questionCount % 2 === 0);
 
-  const {t1, t2} = pair;
-
-  /* Permanently retire both teams from this session */
-  state.usedTeams.add(t1);
-  state.usedTeams.add(t2);
-
-  /* Header scores */
+  /* Update header scores */
   document.getElementById('s-p1score').textContent = state.score1;
   document.getElementById('s-p2score').textContent = state.score2;
   renderPips('p1', state.score1, state.target);
   renderPips('p2', state.score2, state.target);
 
-  /* Team cards */
-  document.getElementById('team1name').textContent = cleanName(t1);
-  document.getElementById('team2name').textContent = cleanName(t2);
-  const img1 = document.getElementById('team1img');
-  const img2 = document.getElementById('team2img');
-  img1.style.opacity='1'; img2.style.opacity='1';
-  img1.src = imgSrc(t1);
-  img2.src = imgSrc(t2);
+  /* Update round badge */
+  setRoundBadge(isTeamCountryRound);
 
-  /* Timer */
+  if (isTeamCountryRound) {
+    /* ── Team-Country round ── */
+    const draw = drawTeamCountry(state.usedTeams, state.usedCountries, forceBig3);
+    if (!draw) { endGame(); return; }
+    state.usedTeams.add(draw.team);
+    state.usedCountries.add(draw.country);
+    renderTeamCountry(draw.team, draw.country, draw.teamLeft);
+  } else {
+    /* ── Team-Team round (original algorithm, untouched) ── */
+    const pair = drawPair(state.usedTeams, forceBig3);
+    if (!pair) { endGame(); return; }
+    const {t1, t2} = pair;
+    state.usedTeams.add(t1);
+    state.usedTeams.add(t2);
+    renderTeamTeam(t1, t2);
+  }
+
   resetQuestionUI();
   startTimer();
 }
@@ -512,7 +666,6 @@ function award(player) {
   stopTimer();
   if (player === 1) state.score1++;
   if (player === 2) state.score2++;
-
   if (state.score1 >= state.target || state.score2 >= state.target) {
     endGame(); return;
   }
@@ -521,8 +674,7 @@ function award(player) {
 
 function endGame() {
   stopTimer();
-  const p1wins = state.score1 >= state.target ||
-                 (state.score1 > state.score2);
+  const p1wins = state.score1 >= state.target || (state.score1 > state.score2);
   const winner = p1wins ? state.p1 : state.p2;
 
   document.getElementById('winner-name').textContent   = winner;
