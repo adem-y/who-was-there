@@ -316,23 +316,23 @@
 ═══════════════════════════════════════════════════════ */
 const ELITE = [
   'arsenal','chelsea','liverpool','manchester-city','manchester-united',
-  'atletico-madrid','barcelona','real-madrid','sevilla',
-  'inter','juventus','lazio','milan','napoli','roma',
+  'atletico-madrid','barcelona','real-madrid',
+  'inter','juventus','milan',
   'bayern-munchen','borussia-dortmund','paris-saint-germain'
 ];
 const OTHER = [
-  'aston-villa','newcastle','tottenham','west-ham',
+  'aston-villa','newcastle','tottenham','west-ham','sevilla',
+  'lazio','napoli','roma',
   'bayer-leverkusen','rb-leipzig',
   'as-monaco','lille','lyon','marseille',
   'benfica','fc-porto','sporting-cp',
   'ajax','feyenoord','psv',
-  'corinthians','flamengo','santos',
   'basaksehir','trabzonspor','al-nassr',
-  'antalyaspor','atalanta','basel','boca-juniors',
-  'borussia-monchengladbach','bursaspor','cska-moskva','everton',
+  'antalyaspor','atalanta',
+  'borussia-monchengladbach','bursaspor','everton',
   'fiorentina','kasimpasa','leicester','real-betis',
-  'real-sociedad','river-plate','sivasspor','valencia',
-  'villarreal','werder-bremen','wolfsburg','wolves','zenit'
+  'real-sociedad','sivasspor','valencia',
+  'villarreal','werder-bremen','wolfsburg','wolves'
 ];
 const BIG3 = ['besiktas','fenerbahce','galatasaray'];
 const ALL  = [...ELITE, ...OTHER, ...BIG3];
@@ -340,15 +340,12 @@ const ALL  = [...ELITE, ...OTHER, ...BIG3];
 /* ── Country catalogue ── */
 /* Slugs must match filename pattern: <slug>.country-flags.png  */
 const COUNTRIES = [
-  'Albania', 'Argentina', 'Austria', 'Belgium', 'Bosnia_and_Herzegovina', 
-  'Brazil', 'Cameroon', 'Canada', 'Chile', 'Colombia', 
-  'Croatia', 'Czech_Republic', 'Denmark', 'Egypt', 
-  'England', 'Finland', 'France', 'Germany', 'Greece', 
-  'Hungary', 'Italy', 'Ivory_Coast', 'Japan', 'Mexico', 
-  'Morocco', 'Netherlands', 'Nigeria', 'Norway', 'Poland', 
-  'Portugal', 'Romania', 'Russia', 'Senegal', 
-  'Serbia', 'South_Korea', 'Spain', 'Sweden', 'Switzerland', 
-  'Turkey', 'Ukraine', 'Uruguay', 'USA', 'Wales'
+  'Argentina', 'Belgium', 'Brazil', 'Cameroon', 
+  'Chile', 'Colombia', 'Croatia', 'Czech_Republic', 'Denmark', 
+  'Egypt', 'England', 'France', 'Germany', 'Italy', 
+  'Ivory_Coast', 'Japan', 'Mexico', 'Morocco', 'Netherlands', 
+  'Nigeria', 'Norway', 'Poland', 'Portugal', 'Senegal', 'Serbia', 'South_Korea', 
+  'Spain', 'Sweden', 'Switzerland', 'Turkey', 'Uruguay'
 ];
 
 const ELITE_WEIGHT  = 3;
@@ -376,15 +373,14 @@ function buildPool(usedTeams, excluded=[]) {
 
 function pickFrom(pool){ return pool[Math.floor(Math.random()*pool.length)]; }
 
-/*  Draw one fresh pair (team–team).  Unchanged original logic.  */
-function drawPair(usedTeams, forceBig3=false) {
+/*  Draw one fresh pair (team–team).  */
+function drawPair(usedTeams, forceBig3=false, forceElite=false, usedElite=new Set()) {
   let t1, t2;
 
   if (forceBig3) {
-    const avail = BIG3.filter(t => !usedTeams.has(t));
-    if (avail.length === 0) {
-      forceBig3 = false;
-    } else {
+    /* BIG3 slot: pick from unused-in-cycle BIG3 */
+    const avail = BIG3.filter(t => !state.big3UsedInCycle.has(t));
+    if (avail.length > 0) {
       t1 = avail[Math.floor(Math.random() * avail.length)];
       const p2 = buildPool(usedTeams, [t1]);
       if (p2.length === 0) return null;
@@ -392,6 +388,24 @@ function drawPair(usedTeams, forceBig3=false) {
       if (Math.random() < .5) [t1,t2]=[t2,t1];
       return {t1,t2};
     }
+    /* fallthrough if somehow none available */
+  }
+
+  if (forceElite) {
+    /* ELITE slot: pick an ELITE not yet used in this elite cycle */
+    const eliteAvail = ELITE.filter(t => !usedElite.has(t) && !usedTeams.has(t));
+    const pool = eliteAvail.length > 0
+      ? eliteAvail
+      : ELITE.filter(t => !usedTeams.has(t)); /* fallback: any ELITE not yet used overall */
+    if (pool.length > 0) {
+      t1 = pool[Math.floor(Math.random() * pool.length)];
+      const p2 = buildPool(usedTeams, [t1]);
+      if (p2.length === 0) return null;
+      t2 = pickFrom(p2);
+      if (Math.random() < .5) [t1,t2]=[t2,t1];
+      return {t1,t2};
+    }
+    /* fallthrough: all ELITE exhausted globally, pick freely */
   }
 
   const p1 = buildPool(usedTeams);
@@ -404,15 +418,27 @@ function drawPair(usedTeams, forceBig3=false) {
 }
 
 /*  Draw one team + one unused country for a team–country round.  */
-function drawTeamCountry(usedTeams, usedCountries, forceBig3=false) {
-  /* Pick team using same BIG3 logic */
+function drawTeamCountry(usedTeams, usedCountries, forceBig3=false, forceElite=false, usedElite=new Set()) {
+  /* Pick team using BIG3 / ELITE / free priority */
   let team;
+
   if (forceBig3) {
-    const avail = BIG3.filter(t => !usedTeams.has(t));
+    const avail = BIG3.filter(t => !state.big3UsedInCycle.has(t));
     if (avail.length > 0) {
       team = avail[Math.floor(Math.random() * avail.length)];
     }
   }
+
+  if (!team && forceElite) {
+    const eliteAvail = ELITE.filter(t => !usedElite.has(t) && !usedTeams.has(t));
+    const pool = eliteAvail.length > 0
+      ? eliteAvail
+      : ELITE.filter(t => !usedTeams.has(t));
+    if (pool.length > 0) {
+      team = pool[Math.floor(Math.random() * pool.length)];
+    }
+  }
+
   if (!team) {
     const pool = buildPool(usedTeams);
     if (pool.length === 0) return null;
@@ -600,8 +626,10 @@ function startGame() {
     score1: 0, score2: 0,
     usedTeams:     new Set(),
     usedCountries: new Set(),
+    usedElite:     new Set(),   /* tracks ELITE usage for cycle reset */
     questionCount: 0,
     big3UsedCount: 0,
+    big3UsedInCycle: new Set(), /* tracks BIG3 usage within current 3-question cycle */
     gameFormat: selectedFormat   /* snapshot of chosen format */
   };
 
@@ -621,10 +649,22 @@ function startGame() {
 function loadQuestion() {
   state.questionCount++;
 
-  /* BIG3 cadence: every 3rd question forces a BIG3 team (unchanged) */
+  /* ── BIG3 cadence: every 3rd question must have a BIG3 team ──
+     Per-cycle set resets after all 3 BIG3 are used, enabling repeat
+     appearances at questions 12, 15, 18… */
   const isBig3Question = (state.questionCount % 3 === 0);
-  const big3Available  = BIG3.some(t => !state.usedTeams.has(t));
-  const forceBig3      = isBig3Question && big3Available;
+  if (isBig3Question && state.big3UsedInCycle.size >= BIG3.length) {
+    state.big3UsedInCycle.clear(); /* all 3 used — start a fresh cycle */
+  }
+  const big3CycleAvail = BIG3.filter(t => !state.big3UsedInCycle.has(t));
+  const forceBig3      = isBig3Question && big3CycleAvail.length > 0;
+
+  /* ── ELITE cadence: every even-numbered question must include an ELITE team ──
+     If all ELITE are exhausted the pool resets so they can repeat. */
+  const isEliteQuestion = (state.questionCount % 2 === 0);
+  if (isEliteQuestion && state.usedElite.size >= ELITE.length) {
+    state.usedElite.clear();
+  }
 
   /* Decide round type based on selected game format */
   let isTeamCountryRound;
@@ -643,18 +683,24 @@ function loadQuestion() {
 
   if (isTeamCountryRound) {
     /* ── Team-Country round ── */
-    const draw = drawTeamCountry(state.usedTeams, state.usedCountries, forceBig3);
+    const draw = drawTeamCountry(state.usedTeams, state.usedCountries, forceBig3, isEliteQuestion, state.usedElite);
     if (!draw) { endGame(); return; }
     state.usedTeams.add(draw.team);
     state.usedCountries.add(draw.country);
+    if (BIG3.includes(draw.team)) state.big3UsedInCycle.add(draw.team);
+    if (ELITE.includes(draw.team)) state.usedElite.add(draw.team);
     renderTeamCountry(draw.team, draw.country, draw.teamLeft);
   } else {
-    /* ── Team-Team round (original algorithm, untouched) ── */
-    const pair = drawPair(state.usedTeams, forceBig3);
+    /* ── Team-Team round ── */
+    const pair = drawPair(state.usedTeams, forceBig3, isEliteQuestion, state.usedElite);
     if (!pair) { endGame(); return; }
     const {t1, t2} = pair;
     state.usedTeams.add(t1);
     state.usedTeams.add(t2);
+    if (BIG3.includes(t1)) state.big3UsedInCycle.add(t1);
+    if (BIG3.includes(t2)) state.big3UsedInCycle.add(t2);
+    if (ELITE.includes(t1)) state.usedElite.add(t1);
+    if (ELITE.includes(t2)) state.usedElite.add(t2);
     renderTeamTeam(t1, t2);
   }
 
